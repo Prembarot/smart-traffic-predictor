@@ -6,6 +6,10 @@ import datetime
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+@app.get("/")
+def home():
+    return {"message": "🚗 Smart Traffic Predictor API is running!"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
