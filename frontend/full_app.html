@@ -165,9 +165,9 @@ async function predict() {
 
     try {
        let res = await fetch(
-            `https://smart-traffic-predictor.onrender.com/predict-real?city=India&start_lat=${start_lat}&start_lon=${start_lon}&end_lat=${end_lat}&end_lon=${end_lon}`,
-            { method: "POST" }
-        );
+          `https://smart-traffic-predictor.onrender.com/predict-real?city=India&start_lat=${start_lat}&start_lon=${start_lon}&end_lat=${end_lat}&end_lon=${end_lon}`,
+          { method: "POST" }
+    );
 
         let data = await res.json();
 
