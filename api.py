@@ -4,6 +4,7 @@ from geopy.distance import geodesic
 import requests
 import datetime
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 app = FastAPI()
 @app.get("/")
@@ -28,7 +29,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 # =========================
 # API KEY
 # =========================
-WEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY"
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 
 
 # =========================
