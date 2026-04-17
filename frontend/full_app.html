@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Traffic Predictor</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        margin: 0;
+        text-align: center;
+        color: white;
+    }
+
+    h2 { margin-top: 20px; }
+
+    .container {
+        backdrop-filter: blur(15px);
+        background: rgba(255,255,255,0.1);
+        border-radius: 16px;
+        padding: 20px;
+        width: 350px;
+        margin: auto;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    input {
+        width: 90%;
+        padding: 10px;
+        margin: 6px;
+        border-radius: 8px;
+        border: none;
+        background: rgba(255,255,255,0.2);
+        color: white;
+    }
+
+    button {
+        background: linear-gradient(135deg, #00c6ff, #0072ff);
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        width: 95%;
+        margin-top: 10px;
+    }
+
+    button:hover { transform: scale(1.05); }
+
+    .result {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.15);
+    }
+
+    #map {
+        height: 400px;
+        margin-top: 20px;
+        border-radius: 12px;
+    }
+
+    canvas {
+        margin-top: 20px;
+        background: white;
+        border-radius: 10px;
+        padding: 10px;
+    }
+    </style>
+</head>
+
+<body>
+
+<h2>🚗 Smart Traffic Predictor</h2>
+
+<div class="container">
+
+    <input id="start_text" placeholder="Start Location (Delhi)">
+    <input id="end_text" placeholder="Destination (Mumbai)">
+
+    <button onclick="searchLocations()">🔍 Search Locations</button>
+
+    <input id="start_lat" placeholder="Start Lat">
+    <input id="start_lon" placeholder="Start Lon">
+    <input id="end_lat" placeholder="End Lat">
+    <input id="end_lon" placeholder="End Lon">
+
+    <button onclick="predict()">🚀 Predict & Show Route</button>
+
+    <div id="output" class="result" style="display:none;"></div>
+
+</div>
+
+<div id="map"></div>
+
+<canvas id="chart" width="300" height="200"></canvas>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+let map = L.map('map').setView([20.5937, 78.9629], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let routeLine, startMarker, endMarker, chart;
+
+// 🌍 Geocoding
+async function getCoordinates(place) {
+    let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${place}`);
+    let data = await res.json();
+
+    if (data.length === 0) return null;
+
+    return {
+        lat: parseFloat(data[0].lat),
+        lon: parseFloat(data[0].lon)
+    };
+}
+
+// 🔍 Search Locations
+async function searchLocations() {
+
+    let start = document.getElementById("start_text").value;
+    let end = document.getElementById("end_text").value;
+
+    let s = await getCoordinates(start);
+    let e = await getCoordinates(end);
+
+    if (!s || !e) {
+        alert("Location not found");
+        return;
+    }
+
+    document.getElementById("start_lat").value = s.lat;
+    document.getElementById("start_lon").value = s.lon;
+    document.getElementById("end_lat").value = e.lat;
+    document.getElementById("end_lon").value = e.lon;
+
+    if (routeLine) map.removeLayer(routeLine);
+
+    routeLine = L.polyline([[s.lat,s.lon],[e.lat,e.lon]], {color:"blue"}).addTo(map);
+
+    map.fitBounds(routeLine.getBounds());
+}
+
+// 🚀 Predict (FIXED)
+async function predict() {
+
+    let start_lat = document.getElementById("start_lat").value;
+    let start_lon = document.getElementById("start_lon").value;
+    let end_lat = document.getElementById("end_lat").value;
+    let end_lon = document.getElementById("end_lon").value;
+
+    let output = document.getElementById("output");
+    output.style.display = "block";
+    output.innerHTML = "⏳ Loading...";
+
+    try {
+       let res = await fetch(
+            `http://127.0.0.1:8000/predict-real?city=India&start_lat=${start_lat}&start_lon=${start_lon}&end_lat=${end_lat}&end_lon=${end_lon}`,
+            { method: "POST" }
+        );
+
+        let data = await res.json();
+
+        if (data.error) {
+            output.innerHTML = "❌ " + data.error;
+            return;
+        }
+
+        // ✅ SHOW RESULT
+        output.innerHTML = `
+            🚀 ML: ${data.ml_predicted_time} min<br>
+            🌐 Real: ${data.real_traffic_time} min<br>
+            📏 Distance: ${data.distance_km} km<br>
+            🌡 Temp: ${data.weather_temp}°C<br>
+            💧 Humidity: ${data.humidity}%
+        `;
+
+        drawChart(data);
+
+    } catch (err) {
+        console.error(err);
+        output.innerHTML = "❌ API Error";
+    }
+}
+
+// 📊 Chart (FIXED POSITION)
+function drawChart(data) {
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(document.getElementById("chart"), {
+        type: 'bar',
+        data: {
+            labels: ["ML Time", "Real Time"],
+            datasets: [{
+                label: "Minutes",
+                data: [data.ml_predicted_time, data.real_traffic_time]
+            }]
+        }
+    });
+}
+
+// 📍 Map Click
+map.on('click', function(e) {
+    let lat = e.latlng.lat;
+    let lon = e.latlng.lng;
+
+    if (!startMarker) {
+        startMarker = L.marker([lat,lon]).addTo(map);
+        document.getElementById("start_lat").value = lat;
+        document.getElementById("start_lon").value = lon;
+    } else {
+        if (endMarker) map.removeLayer(endMarker);
+
+        endMarker = L.marker([lat,lon]).addTo(map);
+        document.getElementById("end_lat").value = lat;
+        document.getElementById("end_lon").value = lon;
+    }
+});
+</script>
+
+</body>
+</html>
