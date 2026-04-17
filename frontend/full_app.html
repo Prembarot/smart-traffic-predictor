@@ -164,12 +164,14 @@ async function predict() {
     output.innerHTML = "⏳ Loading...";
 
     try {
-       let res = await fetch(
-          `https://smart-traffic-predictor.onrender.com/predict-real?city=India&start_lat=${start_lat}&start_lon=${start_lon}&end_lat=${end_lat}&end_lon=${end_lon}`,
-          { method: "POST" }
-    );
+
+        let res = await fetch(
+            `https://smart-traffic-predictor.onrender.com/predict-real?city=India&start_lat=${start_lat}&start_lon=${start_lon}&end_lat=${end_lat}&end_lon=${end_lon}`,
+            { method: "POST" }
+        );
 
         let data = await res.json();
+        console.log(data);
 
         if (data.error) {
             output.innerHTML = "❌ " + data.error;
@@ -178,13 +180,14 @@ async function predict() {
 
         // ✅ SHOW RESULT
         output.innerHTML = `
-            🚀 ML: ${data.ml_predicted_time} min<br>
-            🌐 Real: ${data.real_traffic_time} min<br>
-            📏 Distance: ${data.distance_km} km<br>
-            🌡 Temp: ${data.weather_temp}°C<br>
-            💧 Humidity: ${data.humidity}%
+            🚀 ML: ${data.ml_predicted_time} min <br>
+            🌐 Real: ${data.real_traffic_time} min <br>
+            📏 Distance: ${data.distance_km} km <br>
+            🌡 Temp: ${data.weather_temp} °C <br>
+            💧 Humidity: ${data.humidity} %
         `;
 
+        // ✅ DRAW CHART
         drawChart(data);
 
     } catch (err) {
