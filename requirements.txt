@@ -1,52 +1,6 @@
-pandas
-numpy
-scikit-learn
-matplotlib
-joblib
 fastapi
 uvicorn
-pydantic
-
-python -m pip install -r requirements.txt
-
-
-
-""" 
-Train Model
-            python main.py
-
-👉 This will:
-
-Train model ✅
-Save dataset/model.pkl ✅
-Show evaluation metrics ✅
-
-
-Run FastAPI Server
-            python -m uvicorn api:app --reload
-
-👉 You’ll see:
-
-            Uvicorn running on http://127.0.0.1:8000
-
-Open API in Browser
-
-👉 Open:
-            http://127.0.0.1:8000/docs
-
-Test API
-🔹 /predict
-Use this input:
-
-{
-  "hour": 18,
-  "day": 1,
-  "weather": 2,
-  "rain": 1,
-  "temp": 28,
-  "humidity": 80
-}
-🔹 /best-route
-
-Same input → gives best route
-"""
+pandas
+scikit-learn
+geopy
+requests
